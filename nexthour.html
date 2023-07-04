@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Weather Forecast</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* Custom styles */
+
+    /* Base styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-image: url(./wallpaperflare.com_wallpaper\ \(1\).jpg);
+      background-size: cover;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"],
+    button[type="submit"] {
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+
+    /* Forecast Grid */
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      justify-items: center;
+      margin-top: 20px;
+    }
+
+    .forecast-day {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    .forecast-day h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .forecast-hour {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .forecast-hour p {
+      margin: 0;
+    }
+
+    .forecast-hour .weather-icon {
+      width: 50px;
+      height: 50px;
+      margin: 10px auto;
+    }
+
+    /* Oppo A37fw specific styles */
+    @media (max-width: 413px) {
+      /* Adjust grid columns for Oppo A37fw */
+      .forecast-grid {
+        grid-template-columns: repeat(1, auto);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Weather Forecast</h1>
+    <form id="locationForm">
+      <div class="form-group">
+        <label for="locationInput">Location:</label>
+        <input type="text" id="locationInput" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Get Forecast</button>
+    </form>
+
+    <div id="forecastGrid" class="forecast-grid"></div>
+  </div>
+
+  <!-- Bootstrap JS and jQuery (required for Bootstrap) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    // Your JavaScript code remains the same
+ const apiKey = '98183aced42c56e1555cefbf26f4c9f1';
+    const locationForm = document.getElementById('locationForm');
+    const locationInput = document.getElementById('locationInput');
+    const forecastGrid = document.getElementById('forecastGrid');
+
+    const renderForecastGrid = (forecastData) => {
+      forecastGrid.innerHTML = '';
+
+      forecastData.forEach((forecast) => {
+        const { day, hourlyForecasts } = forecast;
+
+        const forecastDay = document.createElement('div');
+        forecastDay.classList.add('forecast-day');
+
+        const dayHeading = document.createElement('h3');
+        dayHeading.textContent = day;
+
+        forecastDay.appendChild(dayHeading);
+
+        hourlyForecasts.forEach((hourlyForecast, index) => {
+          const { time, weatherText, temperature, weatherIcon } = hourlyForecast;
+
+          const forecastHour = document.createElement('div');
+          forecastHour.classList.add('forecast-hour');
+          forecastHour.style.setProperty('--index', index);
+          forecastHour.style.setProperty('--animation-delay', '0.1s');
+
+          const timeText = document.createElement('p');
+          timeText.textContent = time;
+
+          const weatherIconImg = document.createElement('img');
+          weatherIconImg.src = `https://openweathermap.org/img/w/${weatherIcon}.png`;
+          weatherIconImg.alt = 'Weather Icon';
+          weatherIconImg.classList.add('weather-icon');
+
+          const temperatureText = document.createElement('p');
+          temperatureText.textContent = `Temperature: ${temperature}&deg;C`;
+
+          forecastHour.appendChild(timeText);
+          forecastHour.appendChild(weatherIconImg);
+          forecastHour.appendChild(temperatureText);
+
+          forecastDay.appendChild(forecastHour);
+        });
+
+        forecastGrid.appendChild(forecastDay);
+      });
+    };
+
+    const fetchWeatherForecast = (location) => {
+      // Fetch weather forecast data from OpenWeatherMap API
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${location}&units=metric&appid=${apiKey}`)
+        .then(response => response.json())
+        .then(data => {
+          // Process forecast data and extract relevant information
+          const forecastData = {};
+
+          data.list.forEach(item => {
+            const date = new Date(item.dt * 1000);
+            const day = date.toLocaleDateString('en-US', { weekday: 'long' });
+
+            if (!forecastData[day]) {
+              forecastData[day] = { day, hourlyForecasts: [] };
+            }
+
+            const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' });
+            const weatherText = item.weather[0].description;
+            const temperature = item.main.temp;
+            const weatherIcon = item.weather[0].icon;
+
+            forecastData[day].hourlyForecasts.push({ time, weatherText, temperature, weatherIcon });
+          });
+
+          const forecastArray = Object.values(forecastData);
+
+          renderForecastGrid(forecastArray);
+        })
+        .catch(error => {
+          console.log('Error fetching weather forecast:', error);
+          forecastGrid.innerHTML = '<p>Error fetching weather forecast</p>';
+        });
+    };
+
+    locationForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const location = locationInput.value.trim();
+      if (location !== '') {
+        fetchWeatherForecast(location);
+      }
+    });
+
+  </script>
+</body>
+</html>
